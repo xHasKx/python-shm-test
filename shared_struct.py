@@ -30,31 +30,22 @@ class Struct(Structure):
 		("msg", c_char * 256),
 	]
 
-	def set(self, hour, minute, msg):
-		self.hour = hour
-		self.minute = minute
-		self.msg = msg.encode("utf-8")
+	@classmethod
+	def from_key(cls, key):
+		shm_id = shmget(key, sizeof(Struct), 0o666 | IPC_CREAT)
+		if shm_id < 0:
+			return
+		ptr = shmat(shm_id, 0, 0)
+		if ptr:
+			ptr = cast(ptr, POINTER(Struct))
+			return ptr.contents
 
 	def __str__(self):
 		return "{:02d}:{:02d}: {}".format(self.hour, self.minute, self.msg.decode("utf-8"))
 
-
-PStruct = POINTER(Struct)
-
-
-def shm_begin(key):
-	shm_id = shmget(key, sizeof(Struct), 0o666 | IPC_CREAT)
-	if shm_id < 0:
-		return
-	ptr = shmat(shm_id, 0, 0)
-	if ptr:
-		return cast(ptr, PStruct)
+	def __del__(self):
+		ptr = cast(addressof(self), c_void_p)
+		shmdt(ptr)
 
 
-def shm_done(p_struct):
-	ptr = cast(p_struct, c_void_p)
-	shmdt(ptr)
-
-
-
-__all__ = ["shm_begin", "shm_done", "Struct"]
+__all__ = ["Struct"]

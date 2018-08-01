@@ -2,13 +2,16 @@
 import time
 import random
 import string
-import pstruct
+from shared_struct import Struct
 
-ps = pstruct.shm_begin(102)
-print(ps)
+s = Struct.from_key(102)
 
-for i in range(10):
-	ps.contents.set(random.randint(0, 23), random.randint(0, 59), "".join(random.choice(string.ascii_letters + string.digits) for _ in range(32)))
-	time.sleep(1)
-
-pstruct.shm_done(ps)
+try:
+	while True:
+		s.hour = random.randint(0, 23)
+		s.minute = random.randint(0, 59)
+		s.msg = ("".join(random.choice(string.ascii_letters + string.digits) for _ in range(32))).encode("utf-8")
+		print(s)
+		time.sleep(0.1)
+except KeyboardInterrupt:
+	print()
